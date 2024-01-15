@@ -16,7 +16,7 @@ package(default_testonly = True)
 
 licenses(["notice"])
 
-load("//closure:defs.bzl", "closure_java_template_library", "closure_js_library", "closure_js_proto_library", "closure_js_template_library", "closure_js_test", "closure_templates_plugin")
+load("//closure:defs.bzl", "closure_java_template_library", "closure_js_library", "closure_js_proto_library", "closure_js_template_library", "closure_js_test", "closure_templates_plugin", "closure_js_binary")
 load("//closure/private:file_test.bzl", "file_test")
 
 closure_js_proto_library(
@@ -112,6 +112,23 @@ closure_js_library(
         ":greeter_soy",
         "@com_google_javascript_closure_library//closure/goog/soy",
     ],
+)
+
+closure_js_library(
+    name = "main_lib",
+    srcs = ["main.js"],
+    suppress = ["useOfGoogProvide"],
+    deps = [
+":greeter_lib",
+        ":greeter_soy",
+        "@com_google_javascript_closure_library//closure/goog/soy",
+    ],
+)
+
+closure_js_binary(
+    name = "hello_bin",
+compilation_level = "ADVANCED",
+    deps = [":main_lib"],
 )
 
 closure_js_library(

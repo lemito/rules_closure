@@ -17,30 +17,45 @@ goog.provide('io.bazel.rules.closure.Greeter');
 goog.require('goog.soy');
 goog.require('io.bazel.rules.closure.soy.greeter');
 
-
+/**
+* Greeter page.
+*  * @typedef {{
+*            name: string, numWaffles: number
+*          }}
+**/
+var Mytype;
 
 /**
- * Greeter page.
  * @param {string} name Name of person to greet.
+ * @param {Array<{name: string,numWaffles: number}>} persons Name of person to greet.
  * @constructor
  * @final
  */
-io.bazel.rules.closure.Greeter = function(name) {
 
+io.bazel.rules.closure.Greeter = function (name, persons) {
   /**
    * Name of person to greet.
    * @private {string}
    * @const
    */
   this.name_ = name;
+    /**
+   * Name of person to greet.
+   * @private {Array<{name: string,numWaffles: number}>}
+   * @const
+   */
+  this.persons_ = persons;
 };
-
 
 /**
  * Renders HTML greeting as document body.
+ * @suppress {checkTypes}
  */
-io.bazel.rules.closure.Greeter.prototype.greet = function() {
+io.bazel.rules.closure.Greeter.prototype.greet = function () {
   goog.soy.renderElement(goog.global.document.body,
-                         io.bazel.rules.closure.soy.greeter.greet,
-                         {name: this.name_});
+    io.bazel.rules.closure.soy.greeter.greet,
+    {
+      name: this.name_, persons: this.persons_
+    });
+
 };

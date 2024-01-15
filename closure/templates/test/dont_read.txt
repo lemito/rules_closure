@@ -1,0 +1,31 @@
+/**
+ * Greeter page.
+ * @param {string} name Name of person to greet.
+ * @constructor
+ * @final
+ */
+/*
+io.bazel.rules.closure.Greeter = function(name) {
+console.log('I am alive!');
+
+  /**
+   * Name of person to greet.
+   * @private {string}
+   * @const
+   */
+  this.name_ = name;
+};
+*/
+
+/**
+ * Renders HTML greeting as document body.
+ */
+/*
+io.bazel.rules.closure.Greeter.prototype.greet = function() {
+console.log('I am alive!');
+  goog.soy.renderElement(goog.global.document.body,
+                         io.bazel.rules.closure.soy.greeter.greet,
+                         {name: this.name_});
+
+};
+*/

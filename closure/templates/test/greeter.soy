@@ -20,6 +20,14 @@
  */
 {template .greet}
   {@param name: string}
+  {@param persons: list<[name: string, numWaffles: int]>}
   <p>
     Hello <b>{$name}</b>!
+  </p>
+    <br>
+    <ul>
+{for $person, $personIndex in $persons}
+    <li>{$person.name} ate {$person.numWaffles} waffles.</li>
+{/for}
+</ul>
 {/template}
