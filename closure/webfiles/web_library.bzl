@@ -16,6 +16,7 @@
 
 load(
     "//closure/private:defs.bzl",
+    "WebFilesInfo",
     "create_argfile",
     "difference",
     "long_path",
@@ -39,12 +40,12 @@ def _web_library(ctx):
         fail("when \"*\" is suppressed no other items should be present")
 
     # process what came before
-    deps = unfurl(ctx.attr.deps, provider = "webfiles")
+    deps = unfurl(ctx.attr.deps, provider = WebFilesInfo)
     webpaths = []
     manifests = []
     for dep in deps:
-        webpaths.append(dep.webfiles.webpaths)
-        manifests += [dep.webfiles.manifests]
+        webpaths.append(dep[WebFilesInfo].webpaths)
+        manifests += [dep[WebFilesInfo].manifests]
 
     # process what comes now
     new_webpaths = []
@@ -80,10 +81,10 @@ def _web_library(ctx):
     manifest = ctx.actions.declare_file("%s.pbtxt" % ctx.label.name)
     ctx.actions.write(
         output = manifest,
-        content = struct(
+        content = proto.encode_text(struct(
             label = str(ctx.label),
             src = manifest_srcs,
-        ).to_proto(),
+        )),
     )
     manifests = depset([manifest], transitive = manifests, order = "postorder")
 
@@ -102,13 +103,13 @@ def _web_library(ctx):
         args.append(category)
     inputs.extend(ctx.files.srcs)
     for dep in deps:
-        inputs.append(dep.webfiles.dummy)
+        inputs.append(dep[WebFilesInfo].dummy)
         for f in dep.files.to_list():
             inputs.append(f)
-        direct_manifests += [dep.webfiles.manifest]
-        inputs.append(dep.webfiles.manifest)
+        direct_manifests += [dep[WebFilesInfo].manifest]
+        inputs.append(dep[WebFilesInfo].manifest)
         args.append("--direct_dep")
-        args.append(dep.webfiles.manifest.path)
+        args.append(dep[WebFilesInfo].manifest.path)
     for man in difference(manifests, depset(direct_manifests)):
         inputs.append(man)
         args.append("--transitive_dep")
@@ -136,7 +137,7 @@ def _web_library(ctx):
         ],
     )
     params_file = ctx.actions.declare_file("%s_server_params.pbtxt" % ctx.label.name)
-    ctx.actions.write(output = params_file, content = params.to_proto())
+    ctx.actions.write(output = params_file, content = proto.encode_text(params))
     ctx.actions.write(
         is_executable = True,
         output = ctx.outputs.executable,
@@ -151,25 +152,27 @@ def _web_library(ctx):
                      [dep.data_runfiles.files for dep in deps],
     )
 
-    return struct(
-        files = depset([ctx.outputs.executable, ctx.outputs.dummy]),
-        exports = unfurl(ctx.attr.exports),
-        webfiles = struct(
+    return [
+        DefaultInfo(
+            files = depset([ctx.outputs.executable, ctx.outputs.dummy]),
+            runfiles = ctx.runfiles(
+                files = ctx.files.srcs + ctx.files.data + [
+                    manifest,
+                    params_file,
+                    ctx.outputs.executable,
+                    ctx.outputs.dummy,
+                ],
+                transitive_files = transitive_runfiles,
+            ),
+        ),
+        WebFilesInfo(
             manifest = manifest,
             manifests = manifests,
             webpaths = depset(transitive = webpaths),
             dummy = ctx.outputs.dummy,
+            exports = unfurl(ctx.attr.exports),
         ),
-        runfiles = ctx.runfiles(
-            files = ctx.files.srcs + ctx.files.data + [
-                manifest,
-                params_file,
-                ctx.outputs.executable,
-                ctx.outputs.dummy,
-            ],
-            transitive_files = transitive_runfiles,
-        ),
-    )
+    ]
 
 def _fail(ctx, message):
     if ctx.attr.suppress == ["*"]:
@@ -212,7 +215,7 @@ web_library = rule(
         "host": attr.string(default = "0.0.0.0"),
         "port": attr.string(default = "6006"),
         "srcs": attr.label_list(allow_files = True),
-        "deps": attr.label_list(providers = ["webfiles"]),
+        "deps": attr.label_list(providers = [WebFilesInfo]),
         "use_full_path": attr.bool(default = False),
         "exports": attr.label_list(),
         "data": attr.label_list(allow_files = True),
